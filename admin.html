@@ -44,6 +44,17 @@
     .gallery-admin-item { position: relative; aspect-ratio: 4/3; border-radius: 4px; overflow: hidden; }
     .gallery-admin-item img { width: 100%; height: 100%; object-fit: cover; }
     .gallery-admin-item .remove-item { position: absolute; top: 4px; right: 4px; padding: 4px 8px; }
+    .upload-zone { border: 2px dashed #ccc; border-radius: 6px; padding: 24px; text-align: center; cursor: pointer; transition: border-color 0.3s, background 0.3s; margin-top: 8px; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--gold); background: rgba(200,151,62,0.05); }
+    .upload-zone p { color: var(--text-light); font-size: 0.9rem; margin: 0; }
+    .upload-zone .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-progress { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
+    .upload-progress .bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.3s; }
+    .image-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .image-preview img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+    .image-preview .filename { font-size: 0.85rem; color: var(--text-light); }
+    .gallery-upload { grid-column: 1 / -1; }
   </style>
 </head>
 <body>
@@ -136,6 +147,96 @@ async function apiPost(table, data) {
   return res.json();
 }
 
+// IMAGE UPLOAD
+const STORAGE_BUCKET = 'ridhusverket-images';
+
+async function uploadImage(file) {
+  const ext = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substr(2,6)}.${ext}`;
+  const path = `uploads/${fileName}`;
+
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': file.type,
+      'x-upsert': 'true'
+    },
+    body: file
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Upload failed');
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+}
+
+function createUploadZone(onUpload, existingUrl) {
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `
+    <div class="upload-zone">
+      <div class="upload-icon">📁</div>
+      <p>Dra och släpp en bild här, eller klicka för att välja</p>
+      <input type="file" accept="image/*">
+    </div>
+    <div class="upload-progress"><div class="bar"></div></div>
+    ${existingUrl ? `<div class="image-preview"><img src="${existingUrl}" alt=""><span class="filename">Nuvarande bild</span></div>` : ''}
+  `;
+
+  const zone = wrapper.querySelector('.upload-zone');
+  const input = wrapper.querySelector('input[type="file"]');
+  const progress = wrapper.querySelector('.upload-progress');
+  const bar = wrapper.querySelector('.bar');
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', () => { if (input.files.length) handleFile(input.files[0]); });
+
+  async function handleFile(file) {
+    if (!file.type.startsWith('image/')) { alert('Bara bildfiler tillåtna'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Max 10MB per bild'); return; }
+
+    progress.style.display = 'block';
+    bar.style.width = '30%';
+    zone.querySelector('p').textContent = `Laddar upp ${file.name}...`;
+
+    try {
+      bar.style.width = '60%';
+      const url = await uploadImage(file);
+      bar.style.width = '100%';
+
+      // Show preview
+      let preview = wrapper.querySelector('.image-preview');
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.className = 'image-preview';
+        wrapper.appendChild(preview);
+      }
+      preview.innerHTML = `<img src="${url}" alt=""><span class="filename">${file.name} — uppladdad!</span>`;
+
+      zone.querySelector('p').textContent = 'Bild uppladdad! Dra en ny för att byta.';
+      setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 1500);
+
+      onUpload(url);
+    } catch (err) {
+      alert('Uppladdning misslyckades: ' + err.message);
+      zone.querySelector('p').textContent = 'Dra och släpp en bild här, eller klicka för att välja';
+      progress.style.display = 'none';
+    }
+  }
+
+  return wrapper;
+}
+
 async function apiDelete(table, id) {
   await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
     method: 'DELETE', headers: headers(accessToken)
@@ -213,8 +314,9 @@ async function loadPage(page) {
         <textarea data-field="body">${esc(s.body || '')}</textarea>
       </div>
       <div class="field">
-        <label>Bild URL</label>
-        <input type="text" value="${esc(s.image_url || '')}" data-field="image_url">
+        <label>Bild</label>
+        <input type="text" value="${esc(s.image_url || '')}" data-field="image_url" placeholder="Bild-URL (eller ladda upp nedan)">
+        <div class="section-upload" data-section-id="${s.id}" data-current-url="${esc(s.image_url || '')}"></div>
       </div>`;
 
     if (items.length > 0) {
@@ -254,19 +356,37 @@ async function loadPage(page) {
     </div>`;
   }
   html += `</div>
-    <div style="margin-top:16px;">
+    <div style="margin-top:16px;" class="gallery-upload">
       <div class="field">
-        <label>Lägg till bild (URL)</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="new-gallery-url" placeholder="images/bild.jpg">
-          <input type="text" id="new-gallery-alt" placeholder="Alt-text" style="max-width:200px;">
-          <button class="save-btn" onclick="addGallery('${page}')">Lägg till</button>
-        </div>
+        <label>Ladda upp ny bild till galleriet</label>
+        <div id="gallery-upload-zone" data-page="${page}"></div>
       </div>
     </div>
   </div>`;
 
   area.innerHTML = html;
+
+  // Init section upload zones
+  document.querySelectorAll('.section-upload').forEach(el => {
+    const sectionId = el.dataset.sectionId;
+    const currentUrl = el.dataset.currentUrl;
+    const urlInput = el.parentElement.querySelector('[data-field="image_url"]');
+    const zone = createUploadZone((url) => {
+      urlInput.value = url;
+    }, currentUrl || null);
+    el.appendChild(zone);
+  });
+
+  // Init gallery upload zone
+  const galleryZoneEl = document.getElementById('gallery-upload-zone');
+  if (galleryZoneEl) {
+    const gPage = galleryZoneEl.dataset.page;
+    const zone = createUploadZone(async (url) => {
+      await apiPost('ridhusverket_gallery', { page: gPage, image_url: url, alt_text: '', sort_order: 99 });
+      loadPage(currentPage); // reload to show new image
+    });
+    galleryZoneEl.appendChild(zone);
+  }
 }
 
 // LOAD SETTINGS
