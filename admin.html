@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ridhusverket – Admin CMS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: var(--cream-light); font-family: 'Inter', sans-serif; }
+    .admin-header { background: var(--navy); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .admin-header h1 { color: #fff; font-size: 1.1rem; font-family: 'Playfair Display', serif; }
+    .admin-header .logo span { color: var(--gold); }
+    .admin-nav { display: flex; gap: 8px; align-items: center; }
+    .admin-nav button, .admin-nav a { background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; font-size: 0.85rem; text-decoration: none; }
+    .admin-nav button:hover, .admin-nav a:hover { background: rgba(255,255,255,0.2); }
+    .admin-nav .active { background: var(--gold); }
+    .admin-container { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+    .admin-card { background: #fff; border-radius: 6px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .admin-card h2 { font-size: 1.2rem; margin-bottom: 4px; font-family: 'Playfair Display', serif; }
+    .admin-card .key { font-size: 0.8rem; color: var(--text-light); margin-bottom: 16px; font-family: monospace; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 4px; }
+    .field input, .field textarea, .field select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.95rem; font-family: 'Inter', sans-serif; }
+    .field textarea { min-height: 100px; resize: vertical; }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--gold); }
+    .save-btn { background: var(--gold); color: #fff; border: none; padding: 10px 24px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+    .save-btn:hover { background: var(--gold-light); }
+    .save-btn.saved { background: #2E7D32; }
+    .status-msg { display: inline-block; margin-left: 12px; font-size: 0.85rem; color: #2E7D32; opacity: 0; transition: opacity 0.3s; }
+    .status-msg.show { opacity: 1; }
+    .login-box { max-width: 400px; margin: 120px auto; }
+    .login-box h2 { text-align: center; margin-bottom: 24px; }
+    .hidden { display: none; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab { padding: 8px 20px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; background: #fff; font-size: 0.9rem; }
+    .tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .list-items { border: 1px solid #eee; border-radius: 4px; padding: 12px; margin-top: 8px; }
+    .list-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: start; }
+    .list-item input, .list-item textarea { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9rem; font-family: 'Inter', sans-serif; }
+    .list-item textarea { min-height: 40px; resize: vertical; }
+    .remove-item { background: #e74c3c; color: #fff; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; }
+    .add-item { background: var(--navy); color: #fff; border: none; padding: 6px 14px; border-radius: 3px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; }
+    .gallery-grid-admin { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+    .gallery-admin-item { position: relative; aspect-ratio: 4/3; border-radius: 4px; overflow: hidden; }
+    .gallery-admin-item img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-admin-item .remove-item { position: absolute; top: 4px; right: 4px; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="admin-container login-box">
+      <div class="admin-card">
+        <h2 style="text-align:center; margin-bottom:24px;">Ridhusverket Admin</h2>
+        <form id="login-form">
+          <div class="field">
+            <label>E-post</label>
+            <input type="email" id="login-email" required>
+          </div>
+          <div class="field">
+            <label>Lösenord</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="save-btn" style="width:100%;">Logga in</button>
+          <p id="login-error" style="color:#e74c3c; font-size:0.85rem; margin-top:12px; text-align:center;"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel" class="hidden">
+    <div class="admin-header">
+      <h1 class="logo">RIDHUS<span>VERKET</span> CMS</h1>
+      <div class="admin-nav">
+        <a href="index.html" target="_blank">Visa sidan</a>
+        <button onclick="logout()">Logga ut</button>
+      </div>
+    </div>
+
+    <div class="admin-container">
+      <!-- Page tabs -->
+      <div class="tabs" id="page-tabs">
+        <div class="tab active" data-page="index">Startsida</div>
+        <div class="tab" data-page="ridhus">Ridhus</div>
+        <div class="tab" data-page="ridanlaggning">Ridanläggning</div>
+        <div class="tab" data-page="montage">Montage</div>
+        <div class="tab" data-page="settings">Inställningar</div>
+      </div>
+
+      <!-- Content area -->
+      <div id="content-area"></div>
+    </div>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://jykgbvtylpziowtypbgv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5a2didnR5bHB6aW93dHlwYmd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNzM2ODcsImV4cCI6MjA2ODY0OTY4N30.2ZgmaRiGgfXFBqdj0fqUIx0tEFXxK_9oko8ZkTuXYzU';
+
+let accessToken = null;
+let currentPage = 'index';
+
+function headers(token) {
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${token || SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+}
+
+async function apiGet(endpoint) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, { headers: headers(accessToken) });
+  return res.json();
+}
+
+async function apiPatch(table, id, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH', headers: headers(accessToken), body: JSON.stringify(data)
+  });
+  return res.ok;
+}
+
+async function apiPatchByKey(table, key, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?key=eq.${key}`, {
+    method: 'PATCH', headers: headers(accessToken), body: JSON.stringify(data)
+  });
+  return res.ok;
+}
+
+async function apiPost(table, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: headers(accessToken), body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+async function apiDelete(table, id) {
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE', headers: headers(accessToken)
+  });
+}
+
+// LOGIN
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+
+  if (data.access_token) {
+    accessToken = data.access_token;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('admin-panel').classList.remove('hidden');
+    loadPage('index');
+  } else {
+    document.getElementById('login-error').textContent = 'Fel e-post eller lösenord';
+  }
+});
+
+function logout() {
+  accessToken = null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('admin-panel').classList.add('hidden');
+}
+
+// TABS
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const page = tab.dataset.page;
+    currentPage = page;
+    if (page === 'settings') loadSettings();
+    else loadPage(page);
+  });
+});
+
+// LOAD PAGE SECTIONS
+async function loadPage(page) {
+  const area = document.getElementById('content-area');
+  area.innerHTML = '<p style="color:var(--text-light);">Laddar...</p>';
+
+  const sections = await apiGet(`ridhusverket_sections?page=eq.${page}&order=sort_order`);
+  const gallery = await apiGet(`ridhusverket_gallery?page=eq.${page}&order=sort_order`);
+
+  let html = '';
+
+  for (const s of sections) {
+    const items = await apiGet(`ridhusverket_list_items?section_id=eq.${s.id}&order=sort_order`);
+
+    html += `<div class="admin-card" data-section-id="${s.id}">
+      <h2>${s.section_key}</h2>
+      <div class="key">Sida: ${s.page} / Nyckel: ${s.section_key}</div>
+
+      <div class="field">
+        <label>Rubrik</label>
+        <input type="text" value="${esc(s.heading || '')}" data-field="heading">
+      </div>
+      <div class="field">
+        <label>Underrubrik</label>
+        <input type="text" value="${esc(s.subheading || '')}" data-field="subheading">
+      </div>
+      <div class="field">
+        <label>Brödtext (HTML tillåtet)</label>
+        <textarea data-field="body">${esc(s.body || '')}</textarea>
+      </div>
+      <div class="field">
+        <label>Bild URL</label>
+        <input type="text" value="${esc(s.image_url || '')}" data-field="image_url">
+      </div>`;
+
+    if (items.length > 0) {
+      html += `<div class="field">
+        <label>Listpunkter</label>
+        <div class="list-items" data-section-id="${s.id}">`;
+      for (const item of items) {
+        html += `<div class="list-item" data-item-id="${item.id}">
+          <input type="text" value="${esc(item.title || '')}" placeholder="Titel (valfritt)" data-item-field="title" style="max-width:200px;">
+          <textarea data-item-field="body">${esc(item.body || '')}</textarea>
+          <button class="remove-item" onclick="removeItem(${item.id}, this)">Ta bort</button>
+        </div>`;
+      }
+      html += `<button class="add-item" onclick="addItem(${s.id}, this)">+ Lägg till</button>
+        </div></div>`;
+    } else {
+      html += `<div class="field">
+        <label>Listpunkter</label>
+        <div class="list-items" data-section-id="${s.id}">
+          <button class="add-item" onclick="addItem(${s.id}, this)">+ Lägg till</button>
+        </div></div>`;
+    }
+
+    html += `<button class="save-btn" onclick="saveSection(${s.id}, this)">Spara</button>
+      <span class="status-msg">Sparat!</span>
+    </div>`;
+  }
+
+  // Gallery
+  html += `<div class="admin-card">
+    <h2>Bildgalleri – ${page}</h2>
+    <div class="gallery-grid-admin" id="gallery-admin">`;
+  for (const img of gallery) {
+    html += `<div class="gallery-admin-item" data-gallery-id="${img.id}">
+      <img src="${img.image_url}" alt="${img.alt_text || ''}">
+      <button class="remove-item" onclick="removeGallery(${img.id}, this)">×</button>
+    </div>`;
+  }
+  html += `</div>
+    <div style="margin-top:16px;">
+      <div class="field">
+        <label>Lägg till bild (URL)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-gallery-url" placeholder="images/bild.jpg">
+          <input type="text" id="new-gallery-alt" placeholder="Alt-text" style="max-width:200px;">
+          <button class="save-btn" onclick="addGallery('${page}')">Lägg till</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  area.innerHTML = html;
+}
+
+// LOAD SETTINGS
+async function loadSettings() {
+  const area = document.getElementById('content-area');
+  area.innerHTML = '<p style="color:var(--text-light);">Laddar...</p>';
+
+  const settings = await apiGet('ridhusverket_settings&order=key');
+
+  let html = '<div class="admin-card"><h2>Webbplatsinställningar</h2>';
+  for (const s of settings) {
+    html += `<div class="field">
+      <label>${s.key}</label>
+      <input type="text" value="${esc(s.value)}" data-setting-key="${s.key}">
+    </div>`;
+  }
+  html += `<button class="save-btn" onclick="saveSettings(this)">Spara alla</button>
+    <span class="status-msg">Sparat!</span>
+  </div>`;
+
+  area.innerHTML = html;
+}
+
+// SAVE SECTION
+async function saveSection(id, btn) {
+  const card = btn.closest('.admin-card');
+  const data = {};
+  card.querySelectorAll('[data-field]').forEach(el => {
+    const field = el.dataset.field;
+    data[field] = el.value || null;
+  });
+  data.updated_at = new Date().toISOString();
+
+  await apiPatch('ridhusverket_sections', id, data);
+
+  // Save list items
+  const items = card.querySelectorAll('.list-item');
+  for (const item of items) {
+    const itemId = item.dataset.itemId;
+    if (itemId) {
+      const itemData = {};
+      item.querySelectorAll('[data-item-field]').forEach(el => {
+        itemData[el.dataset.itemField] = el.value || null;
+      });
+      await apiPatch('ridhusverket_list_items', itemId, itemData);
+    }
+  }
+
+  showSaved(btn);
+}
+
+// SAVE SETTINGS
+async function saveSettings(btn) {
+  const inputs = document.querySelectorAll('[data-setting-key]');
+  for (const input of inputs) {
+    await apiPatchByKey('ridhusverket_settings', input.dataset.settingKey, {
+      value: input.value, updated_at: new Date().toISOString()
+    });
+  }
+  showSaved(btn);
+}
+
+// ADD/REMOVE LIST ITEMS
+async function addItem(sectionId, btn) {
+  const result = await apiPost('ridhusverket_list_items', {
+    section_id: sectionId, title: '', body: 'Ny punkt', sort_order: 99
+  });
+  loadPage(currentPage);
+}
+
+async function removeItem(id, btn) {
+  if (confirm('Ta bort denna punkt?')) {
+    await apiDelete('ridhusverket_list_items', id);
+    btn.closest('.list-item').remove();
+  }
+}
+
+// GALLERY
+async function addGallery(page) {
+  const url = document.getElementById('new-gallery-url').value;
+  const alt = document.getElementById('new-gallery-alt').value;
+  if (!url) return;
+  await apiPost('ridhusverket_gallery', { page, image_url: url, alt_text: alt, sort_order: 99 });
+  loadPage(currentPage);
+}
+
+async function removeGallery(id, btn) {
+  if (confirm('Ta bort denna bild?')) {
+    await apiDelete('ridhusverket_gallery', id);
+    btn.closest('.gallery-admin-item').remove();
+  }
+}
+
+// HELPERS
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML.replace(/"/g, '&quot;');
+}
+
+function showSaved(btn) {
+  btn.classList.add('saved');
+  btn.textContent = 'Sparat!';
+  const msg = btn.nextElementSibling;
+  if (msg) msg.classList.add('show');
+  setTimeout(() => {
+    btn.classList.remove('saved');
+    btn.textContent = 'Spara';
+    if (msg) msg.classList.remove('show');
+  }, 2000);
+}
+</script>
+</body>
+</html>

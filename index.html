@@ -27,7 +27,7 @@
   </header>
 
   <!-- HERO -->
-  <section class="hero">
+  <section class="hero" data-cms="hero">
     <div class="hero-media">
       <video autoplay muted loop playsinline poster="images/hero-main.jpg">
         <source src="images/hero-video.mp4" type="video/mp4">
@@ -35,8 +35,8 @@
     </div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <h1>VI BYGGER DITT DRÖMRIDHUS</h1>
-      <p>Skräddarsydda ridhus och hallbyggnader – från första idé till färdigt projekt</p>
+      <h1 data-cms-heading>VI BYGGER DITT DRÖMRIDHUS</h1>
+      <p data-cms-subheading>Skräddarsydda ridhus och hallbyggnader – från första idé till färdigt projekt</p>
       <a href="kontakt.html" class="btn btn-gold">Begär offert</a>
     </div>
   </section>
@@ -187,6 +187,8 @@
   <!-- Lightbox -->
   <div class="lightbox" id="lightbox"><img src="" alt=""></div>
 
+  <script src="js/cms.js"></script>
   <script src="js/main.js"></script>
+  <script>CMS.render('index');</script>
 </body>
 </html>
