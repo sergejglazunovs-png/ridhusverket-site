@@ -61,7 +61,15 @@ const CMS = {
         if (h && section.heading) h.textContent = section.heading;
         if (sub && section.subheading) sub.textContent = section.subheading;
         if (body && section.body) body.innerHTML = section.body;
-        if (img && section.image_url) img.src = section.image_url;
+        if (img && section.image_url) {
+          if (img.tagName === 'IMG') {
+            img.src = section.image_url;
+          } else if (img.tagName === 'VIDEO') {
+            // Don't overwrite <video src> with an image URL — it kills playback.
+            // Update the poster instead so the still frame matches the CMS image.
+            img.poster = section.image_url;
+          }
+        }
 
         // Apply list items
         const listContainer = el.querySelector('[data-cms-list]');
