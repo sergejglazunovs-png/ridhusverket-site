@@ -18,23 +18,25 @@ if (toggle) {
   });
 }
 
-// Lightbox
+// Lightbox — event delegation so CMS-rendered gallery items also work
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = lightbox?.querySelector('img');
 
-document.querySelectorAll('.gallery-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const img = item.querySelector('img');
-    if (lightboxImg && img) {
-      lightboxImg.src = img.src;
-      lightboxImg.alt = img.alt;
-      lightbox.classList.add('active');
-    }
-  });
+document.addEventListener('click', (e) => {
+  const item = e.target.closest('.gallery-item');
+  if (!item || !lightbox || !lightboxImg) return;
+  const img = item.querySelector('img');
+  if (!img) return;
+  lightboxImg.src = img.src;
+  lightboxImg.alt = img.alt;
+  lightbox.classList.add('active');
 });
 
 if (lightbox) {
   lightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') lightbox.classList.remove('active');
+  });
 }
 
 // Simple fade-in on scroll
