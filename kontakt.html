@@ -56,7 +56,17 @@
           </div>
         </div>
 
-        <form class="contact-form" id="contact-form">
+        <form class="contact-form" id="contact-form"
+              action="https://api.web3forms.com/submit"
+              method="POST">
+
+          <!-- Web3Forms-inställningar -->
+          <input type="hidden" name="access_key" value="897e3f36-f89f-444c-a561-3efb2accf45e">
+          <input type="hidden" name="subject" value="Ny förfrågan från ridhusverket.se">
+          <input type="hidden" name="from_name" value="Ridhusverket – Kontaktformulär">
+          <!-- Honeypot för spamskydd -->
+          <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
+
           <label for="name">Namn</label>
           <input type="text" id="name" name="name" placeholder="Ditt namn" required>
 
@@ -78,8 +88,19 @@
           <label for="message">Meddelande</label>
           <textarea id="message" name="message" rows="5" placeholder="Beskriv ditt projekt eller din fråga..." required></textarea>
 
-          <button type="submit" class="btn btn-gold" style="width:100%; text-align:center;">Skicka förfrågan</button>
+          <div id="form-error" style="display:none; margin-bottom:16px; padding:14px 16px; background:#fdecea; color:#8a1f1f; border-radius:4px; font-size:0.95rem;"></div>
+
+          <button type="submit" id="contact-submit" class="btn btn-gold" style="width:100%; text-align:center;">Skicka förfrågan</button>
         </form>
+
+        <!-- Tack-panel (visas efter lyckad inskickning) -->
+        <div id="contact-thanks" class="contact-thanks" style="display:none; padding:48px 32px; background:var(--cream-light); border-radius:4px; text-align:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="margin:0 auto 16px; display:block; color:#2e7d32;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+          </svg>
+          <h3 style="margin-bottom:12px;">Tack för din förfrågan!</h3>
+          <p style="color:var(--text-light); max-width:420px; margin:0 auto;">Vi har tagit emot ditt meddelande och återkommer normalt inom 24 timmar på vardagar.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -116,5 +137,59 @@
   <script src="js/cms.js"></script>
   <script src="js/main.js"></script>
   <script>CMS.render('kontakt');</script>
+
+  <!-- Kontaktformulär: AJAX-inskickning + tack-meddelande -->
+  <script>
+    (function () {
+      var form    = document.getElementById('contact-form');
+      var thanks  = document.getElementById('contact-thanks');
+      var errBox  = document.getElementById('form-error');
+      var submit  = document.getElementById('contact-submit');
+      if (!form) return;
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errBox.style.display = 'none';
+        var originalLabel = submit.textContent;
+        submit.disabled = true;
+        submit.textContent = 'Skickar...';
+
+        var formData = new FormData(form);
+        var payload  = Object.fromEntries(formData.entries());
+
+        try {
+          var res = await fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          var json = await res.json();
+
+          if (res.ok && json.success) {
+            form.style.display = 'none';
+            thanks.style.display = 'block';
+            thanks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Hook för Google Analytics-konvertering (aktiveras när GA är på plats)
+            if (typeof gtag === 'function') {
+              gtag('event', 'form_submit', {
+                form_id: 'contact-form',
+                service: payload.service || 'ej_angivet'
+              });
+            }
+          } else {
+            throw new Error(json.message || 'Inskickning misslyckades');
+          }
+        } catch (err) {
+          errBox.innerHTML = 'Något gick fel. Försök igen om en stund eller mejla oss direkt på <a href="mailto:info@ridhusverket.se">info@ridhusverket.se</a>.';
+          errBox.style.display = 'block';
+          submit.disabled = false;
+          submit.textContent = originalLabel;
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
