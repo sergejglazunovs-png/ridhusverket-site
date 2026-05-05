@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tack – Ridhusverket</title>
+  <meta name="description" content="Tack för din förfrågan. Vi återkommer normalt inom 24 timmar på vardagar.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header scrolled">
+    <nav class="nav-inner">
+      <a href="index.html" class="logo">RIDHUS<span>VERKET</span></a>
+      <ul class="nav-links">
+        <li><a href="ridhus.html">Ridhus</a></li>
+        <li><a href="ridanlaggning.html">Ridanläggning</a></li>
+        <li><a href="montage.html">Montage</a></li>
+        <li><a href="kontakt.html" class="nav-cta">Kontakta oss</a></li>
+      </ul>
+      <button class="menu-toggle" aria-label="Meny"><span></span><span></span><span></span></button>
+    </nav>
+  </header>
+
+  <!-- SPACER for fixed header -->
+  <div style="height:72px;"></div>
+
+  <!-- THANK YOU -->
+  <section class="section">
+    <div class="container">
+      <div style="max-width:640px; margin:0 auto; padding:64px 32px; background:var(--cream-light); border-radius:4px; text-align:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="margin:0 auto 24px; display:block; color:#2e7d32;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+        </svg>
+        <h1 style="margin-bottom:16px;">Tack för din förfrågan!</h1>
+        <div class="accent-line" style="margin:0 auto 24px;"></div>
+        <p style="color:var(--text-light); font-size:1.05rem; margin-bottom:32px;">
+          Vi har tagit emot ditt meddelande och återkommer normalt inom 24 timmar på vardagar.
+          Under tiden får du gärna utforska våra lösningar.
+        </p>
+        <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+          <a href="index.html" class="btn btn-gold">Tillbaka till startsidan</a>
+          <a href="ridhus.html" class="btn">Se våra ridhus</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo">RIDHUS<span>VERKET</span></span>
+          <p>Med Ridhusverket får du inte bara en byggnad – du får en långsiktig lösning anpassad efter dina behov.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Tjänster</h4>
+          <ul>
+            <li><a href="ridhus.html">Ridhus</a></li>
+            <li><a href="ridanlaggning.html">Ridanläggning</a></li>
+            <li><a href="montage.html">Montage & Installation</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Kontakt</h4>
+          <ul>
+            <li><a href="tel:+46720700804">+46 720 700 80 04</a></li>
+            <li><a href="mailto:info@ridhusverket.se">info@ridhusverket.se</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">&copy; 2026 Ridhusverket. Alla rättigheter förbehållna.</div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+
+  <!-- Konverteringsspårning: körs endast om besökaren kommer från formuläret -->
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('submitted') === '1') {
+        // Hook för Google Analytics-konvertering (no-op tills GA är installerat)
+        if (typeof gtag === 'function') {
+          gtag('event', 'form_submit', {
+            form_id: 'contact-form',
+            service: params.get('service') || 'ej_angivet'
+          });
+        }
+        // Rensa URL så att refresh inte räknas som ny konvertering
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

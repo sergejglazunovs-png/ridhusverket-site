@@ -92,15 +92,6 @@
 
           <button type="submit" id="contact-submit" class="btn btn-gold" style="width:100%; text-align:center;">Skicka förfrågan</button>
         </form>
-
-        <!-- Tack-panel (visas efter lyckad inskickning) -->
-        <div id="contact-thanks" class="contact-thanks" style="display:none; padding:48px 32px; background:var(--cream-light); border-radius:4px; text-align:center;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="margin:0 auto 16px; display:block; color:#2e7d32;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-          </svg>
-          <h3 style="margin-bottom:12px;">Tack för din förfrågan!</h3>
-          <p style="color:var(--text-light); max-width:420px; margin:0 auto;">Vi har tagit emot ditt meddelande och återkommer normalt inom 24 timmar på vardagar.</p>
-        </div>
       </div>
     </div>
   </section>
@@ -138,11 +129,10 @@
   <script src="js/main.js"></script>
   <script>CMS.render('kontakt');</script>
 
-  <!-- Kontaktformulär: AJAX-inskickning + tack-meddelande -->
+  <!-- Kontaktformulär: AJAX-inskickning + redirect till tack-sida -->
   <script>
     (function () {
       var form    = document.getElementById('contact-form');
-      var thanks  = document.getElementById('contact-thanks');
       var errBox  = document.getElementById('form-error');
       var submit  = document.getElementById('contact-submit');
       if (!form) return;
@@ -169,16 +159,9 @@
           var json = await res.json();
 
           if (res.ok && json.success) {
-            form.style.display = 'none';
-            thanks.style.display = 'block';
-            thanks.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Hook för Google Analytics-konvertering (aktiveras när GA är på plats)
-            if (typeof gtag === 'function') {
-              gtag('event', 'form_submit', {
-                form_id: 'contact-form',
-                service: payload.service || 'ej_angivet'
-              });
-            }
+            // Skicka vidare till tack-sidan med markör för konverteringsspårning
+            var service = encodeURIComponent(payload.service || 'ej_angivet');
+            window.location.href = 'tack.html?submitted=1&service=' + service;
           } else {
             throw new Error(json.message || 'Inskickning misslyckades');
           }
