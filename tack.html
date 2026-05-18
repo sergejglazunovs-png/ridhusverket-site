@@ -7,6 +7,17 @@
   <meta name="description" content="Tack för din förfrågan. Vi återkommer normalt inom 24 timmar på vardagar.">
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Google tag (gtag.js) — ersätt G-XXXXXXXXXX med ert GA4 Measurement ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+    // Google Ads — avkommentera och byt ut AW-XXXXXXXXX när Ads-kontot är klart
+    // gtag('config', 'AW-XXXXXXXXX');
+  </script>
 </head>
 <body>
 
@@ -83,12 +94,27 @@
     (function () {
       var params = new URLSearchParams(window.location.search);
       if (params.get('submitted') === '1') {
-        // Hook för Google Analytics-konvertering (no-op tills GA är installerat)
+        var service = params.get('service') || 'ej_angivet';
+
         if (typeof gtag === 'function') {
+          // GA4: generic form_submit
           gtag('event', 'form_submit', {
             form_id: 'contact-form',
-            service: params.get('service') || 'ej_angivet'
+            service: service
           });
+          // GA4: rekommenderat lead-event (visas som konvertering i GA4)
+          gtag('event', 'generate_lead', {
+            currency: 'SEK',
+            value: 0,
+            service: service
+          });
+          // Google Ads konvertering — avkommentera och byt ut send_to-värdet
+          // (formatet är AW-XXXXXXXXX/abcDEF123ghi från Google Ads → Konverteringar)
+          // gtag('event', 'conversion', {
+          //   send_to: 'AW-XXXXXXXXX/abcDEF123ghi',
+          //   value: 0,
+          //   currency: 'SEK'
+          // });
         }
         // Rensa URL så att refresh inte räknas som ny konvertering
         if (window.history && window.history.replaceState) {
