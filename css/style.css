@@ -740,3 +740,38 @@ a { text-decoration: none; color: inherit; }
   .section { padding: 64px 0; }
   .gallery-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ===== SECTION DETAIL (specs & pricing) ===== */
+.section-detail {
+  max-width: 900px;
+  margin: 56px auto 0;
+}
+.section-detail h3 {
+  font-size: 1.4rem;
+  margin: 36px 0 14px;
+}
+.section-detail h3:first-child { margin-top: 0; }
+.section-detail p {
+  color: var(--text-light);
+  margin-bottom: 16px;
+  font-size: 1.02rem;
+}
+.section-detail .price-from {
+  color: var(--navy);
+  font-weight: 600;
+}
+.size-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.size-list li {
+  background: var(--white);
+  border: 1px solid rgba(27,42,74,0.12);
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-weight: 500;
+  color: var(--navy);
+}
